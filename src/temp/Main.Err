@@ -1,0 +1,375 @@
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Wed Nov  6 22:10:43 2013
+Execution stopped: IsEdge(SrcNId, DstNId) [Reason:'Edge between 7 and 0 does not exist.'], file include/snap-core/network.h, line 776
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Wed Nov  6 22:11:36 2013
+Execution stopped: IsEdge(SrcNId, DstNId) [Reason:'Edge between 3 and 0 does not exist.'], file include/snap-core/network.h, line 776
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Wed Nov  6 22:17:30 2013
+Execution stopped: IsNode(SrcNId) && IsNode(DstNId) [Reason:'1 or 0 not a node.'], file include/snap-core/network.h, line 775
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Wed Nov  6 22:20:32 2013
+Execution stopped: !IsNode(NId) [Reason:'NodeId 7 already exists'], file include/snap-core/network.h, line 680
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Thu Nov  7 01:29:42 2013
+Execution stopped: IsNode(NId) [Reason:'NodeId 0 does not exist.'], file include/snap-core/network.h, line 701
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Thu Nov  7 01:30:12 2013
+Execution stopped: IsNode(NId) [Reason:'NodeId 0 does not exist.'], file include/snap-core/network.h, line 701
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Thu Nov  7 01:49:49 2013
+Execution stopped: IsEdge(SrcNId, DstNId) [Reason:'Edge between 12 and 0 does not exist.'], file include/snap-core/network.h, line 776
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Thu Nov  7 01:50:14 2013
+Execution stopped: IsNode(SrcNId) && IsNode(DstNId) [Reason:'8 or 0 not a node.'], file include/snap-core/network.h, line 775
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Thu Nov  7 01:50:24 2013
+Execution stopped: IsEdge(SrcNId, DstNId) [Reason:'Edge between 3 and 0 does not exist.'], file include/snap-core/network.h, line 776
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Fri Nov  8 23:51:19 2013
+Execution stopped: IsNode(SrcNId) && IsNode(DstNId) [Reason:'0 or 1 not a node.'], file include/snap-core/network.h, line 740
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Fri Nov  8 23:54:48 2013
+Execution stopped: IsNode(SrcNId) && IsNode(DstNId) [Reason:'0 or 1 not a node.'], file include/snap-core/network.h, line 740
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Fri Nov  8 23:55:47 2013
+Execution stopped: IsNode(SrcNId) && IsNode(DstNId) [Reason:'0 or 1 not a node.'], file include/snap-core/network.h, line 740
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Sat Nov  9 00:38:33 2013
+Execution stopped: IsNode(NId) [Reason:'NodeId 0 does not exist.'], file include/snap-core/network.h, line 701
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Sat Nov  9 11:42:10 2013
+Execution stopped: IsNode(SrcNId) && IsNode(DstNId) [Reason:'0 or 1 not a node.'], file include/snap-core/network.h, line 740
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Sat Nov  9 22:47:49 2013
+Execution stopped: IsNode(SrcNId) && IsNode(DstNId) [Reason:'0 or 6 not a node.'], file include/snap-core/network.h, line 740
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Sun Nov 10 02:09:53 2013
+Execution stopped: IsNode(SrcNId) && IsNode(DstNId) [Reason:'0 or 1 not a node.'], file include/snap-core/network.h, line 740
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Sun Nov 10 10:16:25 2013
+Execution stopped: IsNode(SrcNId) && IsNode(DstNId) [Reason:'0 or 1 not a node.'], file include/snap-core/network.h, line 740
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Sun Nov 10 11:20:51 2013
+Execution stopped: IsNode(SrcNId) && IsNode(DstNId) [Reason:'20 or 56 not a node.'], file include/snap-core/network.h, line 740
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Sun Nov 10 11:21:44 2013
+Execution stopped: IsNode(SrcNId) && IsNode(DstNId) [Reason:'20 or 56 not a node.'], file include/snap-core/network.h, line 740
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Sun Nov 10 12:07:40 2013
+Execution stopped: IsNode(SrcNId) && IsNode(DstNId) [Reason:'0 or 6 not a node.'], file include/snap-core/network.h, line 740
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Sun Nov 10 12:45:01 2013
+Execution stopped: IsNode(SrcNId) && IsNode(DstNId) [Reason:'0 or 1 not a node.'], file include/snap-core/network.h, line 740
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Sun Nov 10 16:19:03 2013
+Execution stopped: IsNode(SrcNId) && IsNode(DstNId) [Reason:'-1 or 0 not a node.'], file include/snap-core/network.h, line 740
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Sun Nov 10 16:19:39 2013
+Execution stopped: IsNode(SrcNId) && IsNode(DstNId) [Reason:'-1 or 0 not a node.'], file include/snap-core/network.h, line 740
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Sun Nov 10 16:21:24 2013
+Execution stopped: IsNode(SrcNId) && IsNode(DstNId) [Reason:'-1 or 0 not a node.'], file include/snap-core/network.h, line 740
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Sun Nov 10 16:52:40 2013
+Execution stopped: IsNode(SrcNId) && IsNode(DstNId) [Reason:'37 or 163979 not a node.'], file include/snap-core/network.h, line 740
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Sun Nov 10 16:58:21 2013
+Execution stopped: IsNode(SrcNId) && IsNode(DstNId) [Reason:'22 or 127 not a node.'], file include/snap-core/network.h, line 740
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Sun Nov 10 16:59:54 2013
+Execution stopped: IsNode(SrcNId) && IsNode(DstNId) [Reason:'22 or 127 not a node.'], file include/snap-core/network.h, line 740
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Sun Nov 10 17:05:42 2013
+Execution stopped: IsNode(SrcNId) && IsNode(DstNId) [Reason:'663 or 167426 not a node.'], file include/snap-core/network.h, line 740
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Mon Nov 11 22:30:48 2013
+Execution stopped: IsNode(SrcNId) && IsNode(DstNId) [Reason:'2 or 3 not a node.'], file include/snap-core/network.h, line 740
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Mon Nov 11 22:31:32 2013
+Execution stopped: IsNode(SrcNId) && IsNode(DstNId) [Reason:'2 or 3 not a node.'], file include/snap-core/network.h, line 740
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Mon Nov 11 22:35:22 2013
+Execution stopped: IsNode(NId) [Reason:'NodeId 0 does not exist.'], file include/snap-core/network.h, line 701
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Mon Nov 11 22:36:26 2013
+Execution stopped: IsNode(NId) [Reason:'NodeId 0 does not exist.'], file include/snap-core/network.h, line 701
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Mon Nov 11 23:17:57 2013
+Execution stopped: IsNode(SrcNId) && IsNode(DstNId) [Reason:'2147483647 or 0 not a node.'], file include/snap-core/network.h, line 740
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Mon Nov 11 23:19:07 2013
+Execution stopped: IsNode(NId) [Reason:'NodeId 2147483647 does not exist.'], file include/snap-core/network.h, line 701
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Mon Nov 11 23:19:58 2013
+Execution stopped: IsNode(SrcNId) && IsNode(DstNId) [Reason:'2147483647 or 0 not a node.'], file include/snap-core/network.h, line 753
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Mon Nov 11 23:20:56 2013
+Execution stopped: IsNode(SrcNId) && IsNode(DstNId) [Reason:'2147483647 or 0 not a node.'], file include/snap-core/network.h, line 753
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Mon Nov 11 23:21:21 2013
+Execution stopped: IsNode(SrcNId) && IsNode(DstNId) [Reason:'2147483647 or 0 not a node.'], file include/snap-core/network.h, line 753
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Mon Nov 11 23:24:20 2013
+Execution stopped: IsNode(SrcNId) && IsNode(DstNId) [Reason:'2147483647 or 0 not a node.'], file include/snap-core/network.h, line 753
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Mon Nov 11 23:30:44 2013
+Execution stopped: IsNode(SrcNId) && IsNode(DstNId) [Reason:'48490 or 920 not a node.'], file include/snap-core/network.h, line 740
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Wed Nov 13 01:15:48 2013
+Execution stopped: !IsNode(NId) [Reason:'NodeId 10876 already exists'], file include/snap-core/network.h, line 680
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Wed Nov 13 01:16:54 2013
+Execution stopped: !IsNode(NId) [Reason:'NodeId 10876 already exists'], file include/snap-core/network.h, line 680
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Wed Nov 13 01:17:06 2013
+Execution stopped: !IsNode(NId) [Reason:'NodeId 10876 already exists'], file include/snap-core/network.h, line 680
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Wed Nov 13 01:17:20 2013
+Execution stopped: !IsNode(NId) [Reason:'NodeId 10876 already exists'], file include/snap-core/network.h, line 680
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Wed Nov 13 01:18:50 2013
+Execution stopped: !IsNode(NId) [Reason:'NodeId 10876 already exists'], file include/snap-core/network.h, line 680
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Wed Nov 13 01:23:04 2013
+Execution stopped: !IsNode(NId) [Reason:'NodeId 10876 already exists'], file include/snap-core/network.h, line 680
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Wed Nov 13 01:23:24 2013
+Execution stopped: !IsNode(NId) [Reason:'NodeId 10876 already exists'], file include/snap-core/network.h, line 680
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Wed Nov 13 01:23:34 2013
+Execution stopped: !IsNode(NId) [Reason:'NodeId 10876 already exists'], file include/snap-core/network.h, line 680
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Wed Nov 13 01:25:48 2013
+Execution stopped: !IsNode(NId) [Reason:'NodeId 10876 already exists'], file include/snap-core/network.h, line 680
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Wed Nov 13 01:31:32 2013
+Execution stopped: !IsNode(NId) [Reason:'NodeId 10876 already exists'], file include/snap-core/network.h, line 680
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Wed Nov 13 01:32:24 2013
+Execution stopped: !IsNode(NId) [Reason:'NodeId 10876 already exists'], file include/snap-core/network.h, line 680
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Wed Nov 13 01:34:47 2013
+Execution stopped: !IsNode(NId) [Reason:'NodeId 10876 already exists'], file include/snap-core/network.h, line 680
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Wed Nov 13 01:35:32 2013
+Execution stopped: !IsNode(NId) [Reason:'NodeId 10876 already exists'], file include/snap-core/network.h, line 680
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Wed Nov 13 01:36:21 2013
+Execution stopped: !IsNode(NId) [Reason:'NodeId 10876 already exists'], file include/snap-core/network.h, line 680
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Wed Nov 13 01:38:43 2013
+Execution stopped: !IsNode(NId) [Reason:'NodeId 10876 already exists'], file include/snap-core/network.h, line 680
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Wed Nov 13 10:38:24 2013
+Execution stopped: !IsNode(NId) [Reason:'NodeId 10876 already exists'], file include/snap-core/network.h, line 680
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Wed Nov 13 10:38:25 2013
+Execution stopped: !IsNode(NId) [Reason:'NodeId 10876 already exists'], file include/snap-core/network.h, line 680
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Wed Nov 13 10:42:58 2013
+Execution stopped: !IsNode(NId) [Reason:'NodeId 10876 already exists'], file include/snap-core/network.h, line 680
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Wed Nov 13 10:43:38 2013
+Execution stopped: !IsNode(NId) [Reason:'NodeId 10876 already exists'], file include/snap-core/network.h, line 680
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Wed Nov 13 11:53:52 2013
+Execution stopped: !IsNode(NId) [Reason:'NodeId 10876 already exists'], file include/snap-core/network.h, line 680
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Wed Nov 13 12:09:38 2013
+Execution stopped: !IsNode(NId) [Reason:'NodeId 10876 already exists'], file include/snap-core/network.h, line 680
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Wed Nov 13 22:18:04 2013
+Execution stopped: !IsNode(NId) [Reason:'NodeId 10876 already exists'], file include/snap-core/network.h, line 680
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Wed Nov 13 22:20:00 2013
+Execution stopped: !IsNode(NId) [Reason:'NodeId 10876 already exists'], file include/snap-core/network.h, line 680
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Wed Nov 13 22:20:52 2013
+Execution stopped: !IsNode(NId) [Reason:'NodeId 10876 already exists'], file include/snap-core/network.h, line 680
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Wed Nov 13 22:21:06 2013
+Execution stopped: !IsNode(NId) [Reason:'NodeId 10876 already exists'], file include/snap-core/network.h, line 680
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Wed Nov 13 22:29:25 2013
+Execution stopped: !IsNode(NId) [Reason:'NodeId 10876 already exists'], file include/snap-core/network.h, line 680
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Tue Nov 19 13:42:37 2013
+Execution stopped: !IsNode(NId) [Reason:'NodeId 10876 already exists'], file include/snap-core/network.h, line 680
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Tue Nov 19 13:43:16 2013
+Execution stopped: !IsNode(NId) [Reason:'NodeId 10876 already exists'], file include/snap-core/network.h, line 680
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Tue Nov 19 13:43:43 2013
+Execution stopped: !IsNode(NId) [Reason:'NodeId 10876 already exists'], file include/snap-core/network.h, line 680
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Tue Nov 19 13:43:45 2013
+Execution stopped: !IsNode(NId) [Reason:'NodeId 10876 already exists'], file include/snap-core/network.h, line 680
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Tue Nov 19 13:44:36 2013
+Execution stopped: !IsNode(NId) [Reason:'NodeId 10876 already exists'], file include/snap-core/network.h, line 680
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Tue Nov 19 13:46:27 2013
+Execution stopped: !IsNode(NId) [Reason:'NodeId 10876 already exists'], file include/snap-core/network.h, line 680
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Tue Nov 19 13:46:58 2013
+Execution stopped: !IsNode(NId) [Reason:'NodeId 10876 already exists'], file include/snap-core/network.h, line 680
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Tue Nov 19 13:47:07 2013
+Execution stopped: !IsNode(NId) [Reason:'NodeId 10876 already exists'], file include/snap-core/network.h, line 680
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Tue Nov 19 13:48:04 2013
+Execution stopped: !IsNode(NId) [Reason:'NodeId 10876 already exists'], file include/snap-core/network.h, line 680
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Tue Nov 19 13:48:41 2013
+Execution stopped: !IsNode(NId) [Reason:'NodeId 10876 already exists'], file include/snap-core/network.h, line 680
+--------

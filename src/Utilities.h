@@ -1,12 +1,13 @@
 #pragma once
 
 #include <vector>
-#include <map>
-#include <tbb/concurrent_unordered_map.h>
+#include <limits.h>
+#include <functional>
+#include <limits.h>
+
 template <class T> class TPt;
 template <class T, class U> class TNodeEDatNet;
 class TFlt;
-
 
 #ifdef __linux__
 void SystemPause();
@@ -14,14 +15,19 @@ void SystemPause();
 
 int GetPhysicalProcessorCount();
 
-
 //! @param minNumNodesPerRank How 'fat' the DAG should be.
 //! @param minRanks How 'tall' the DAG should be.
 //! @param probabilityEdge Chance of having an Edge in percent.
 TPt<TNodeEDatNet<TFlt, TFlt>> GenerateRandomBayesianNetwork(unsigned int minNumNodesPerRank, unsigned int maxNumNodesPerRank, unsigned int minRanks, unsigned int maxRanks, unsigned int probabilityEdge);
 
-void RandomGraphInitialization(TPt<TNodeEDatNet<TFlt, TFlt>> &pGraph);
-void InitializationBeforePropagation(TPt<TNodeEDatNet<TFlt, TFlt>>& pGraph);
+TPt<TNodeEDatNet<TFlt, TFlt>> CopyGraph(const TPt<TNodeEDatNet<TFlt, TFlt>> &pGraph);
+
+void AddSuperRootNode(TPt<TNodeEDatNet<TFlt, TFlt>>& pGraph, const std::vector<int> &vSeedNodes, int superRootNodeID = INT_MAX);
+
+void RandomGraphInitialization(TPt<TNodeEDatNet<TFlt, TFlt>> &pGraph, double&& min, double&& max);
+
+//! Set the values for each node of pGraph to 0
+void ResetGraphBelief(TPt<TNodeEDatNet<TFlt, TFlt>> &pGraph);
 
 //! Input : Directed graph with initialized weight edges.
 //! Edges with a propagation probability strictly greater than dThreshold are ignored.
@@ -36,5 +42,28 @@ TPt<TNodeEDatNet<TFlt, TFlt>> GenerateDAG2(const TPt<TNodeEDatNet<TFlt, TFlt>>& 
 
 TPt<TNodeEDatNet<TFlt, TFlt>> GenerateDAG2(const TPt<TNodeEDatNet<TFlt, TFlt>>& pGraph, int sourceNode, double dThreshold=0.0);
 
-std::vector<int> MaxIncrementalInfluence(TPt<TNodeEDatNet<TFlt, TFlt>>& pGraph, int numRounds);
+//! Compute the rank from sourceNode using BFS.
+//! Nodes already explored may be added back.
+void CalculateRankFromSource(const TPt<TNodeEDatNet<TFlt, TFlt>> &pGraph, int sourceNode, std::vector<int> &vResult);
+void CalculateRankFromSource(const TPt<TNodeEDatNet<TFlt, TFlt>> &pGraph, const std::vector<int> vSeedNodes, std::vector<int> &vResult);
+
+//! Compute the rank from sourceNode using Bellman Ford with negative unitary weights. sourceNode has rank 0.
+//! Not viable for large graphs.
+void CalculateRankFromSource_BellmanFord(const TPt<TNodeEDatNet<TFlt, TFlt>> &pGraph, int sourceNode, std::vector<int> &vResult);
+void CalculateRankFromSource_BellmanFord(const TPt<TNodeEDatNet<TFlt, TFlt>> &pGraph, const std::vector<int> vSeedNodes, std::vector<int> &vResult);
+
+//! Compute the number of reachable vertices from source node
+//! Function used in NewGreedIC algorithm
+int GetNumOfReachableNodesFromSource(const TPt<TNodeEDatNet<TFlt, TFlt>> &pGraph,int sourceNode, std::vector<int>& vResult);
+int GetNumOfReachableNodesFromSource(const TPt<TNodeEDatNet<TFlt, TFlt>> &pGraph,const std::vector<int> vSeedNodes, std::vector<int>& vResult);
+int GetNumOfReachableNodesFromSource(const TPt<TNodeEDatNet<TFlt, TFlt>> &pGraph,int sourceNode);
+int GetNumOfReachableNodesFromSource(const TPt<TNodeEDatNet<TFlt, TFlt>> &pGraph,const std::vector<int> vSeedNodes);
+
+//! @note pGraph1 and pGraph2 must have the same nodes
+//! Nodes with a null belief are not taken into account.
+double BPError(const TPt<TNodeEDatNet<TFlt, TFlt>>& pGraph1, const TPt<TNodeEDatNet<TFlt, TFlt>>& pGraph2, const std::function<double(double, double)> &);
+
+
+void SaveEdgeWeightsToFile(const TPt<TNodeEDatNet<TFlt, TFlt>>& pGraph, const std::string &fileName);
+void LoadEdgeWeightsFromFile(TPt<TNodeEDatNet<TFlt, TFlt>>& pGraph, const std::string &fileName);
 

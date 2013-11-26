@@ -6,8 +6,11 @@
 #include <tbb/spin_mutex.h>
 #include <tbb/concurrent_unordered_map.h>
 #include <tbb/parallel_for.h>
+#include <tbb/concurrent_vector.h>
+#include <tbb/partitioner.h>
 #include "Utilities.h"
 #include "BP.h"
+#include "omp.h"
 #include <Snap.h>
 
 
@@ -442,17 +445,14 @@ std::vector<int> GetPeerSeeds(std::map<int,TPt<TNodeEDatNet<TFlt, TFlt>> > mMIOA
 			{
 				if (isOverlapped) break;
 				for(auto u = pMIOA->BegNI();u < pMIOA->EndNI(); u++)
-				{
 					if(v.GetId()== u.GetId())
 					{
 						isOverlapped = true;
 						break;
 					}
-				}
 			}
 			if(isOverlapped) vPeerSeeds.push_back(it->first);
 		}
-		else continue;
 	}
 
 	return vPeerSeeds;
@@ -461,42 +461,47 @@ std::vector<int> GetPeerSeeds(std::map<int,TPt<TNodeEDatNet<TFlt, TFlt>> > mMIOA
 std::vector<int> MaxIncrementalInfluence(TPt<TNodeEDatNet<TFlt, TFlt>>& pGraph, int numRounds){
 
 	std::vector<int> vSeedSet;
-	std::map<int,double> mSpreadIncrement;;
-	double influence = 0.0;
+	tbb::concurrent_unordered_map<int,double> mSpreadIncrement;
+	auto pGraph_temp = TNodeEDatNet<TFlt, TFlt>::New();
+	double influence = 0.0; int i,chunk = 50;
+	static tbb::spin_mutex sMutex;
+
+	//Failure of using PeerSeeds due to insufficient memory
 	//std::map<int,std::vector<int> > mPeerSeeds;
 	//std::map<int,TPt<TNodeEDatNet<TFlt, TFlt>> > mMIOAs;
-	//std::map<int,double> mSpreadIncrement_Old;
 
 	/* Initialization*/
 	int numNodes = pGraph->GetMxNId();
-	tbb::parallel_for(tbb::blocked_range<int>(0, numNodes, 50),
-		[&](const tbb::blocked_range<int>& r)
-		{
-			for (int i=r.begin();i!=r.end();++i){
+	#pragma omp parallel shared(pGraph,chunk,mSpreadIncrement) private(pGraph_temp,i)
+	{
+		#pragma omp for schedule(dynamic,chunk) nowait
+			for (i =0;i<numNodes;++i)
+			{
 				if(pGraph->IsNode(i))
 				{
-					auto pGraph_v = MIOA(pGraph, i, 0);
-					InitializationBeforePropagation(pGraph_v);
-					ParallelBPFromNode_1DPartitioning(pGraph_v, i);
-					mSpreadIncrement[i]=InfluenceSpreadFromSeedNodes(pGraph_v);
+					pGraph_temp = MIOA(pGraph, i, 0);
+					InitializationBeforePropagation(pGraph_temp);
+					ParallelBPFromNode_1DPartitioning(pGraph_temp, i);
+					mSpreadIncrement[i]=InfluenceSpreadFromSeedNodes(pGraph_temp);
 					//mMIOAs.insert(std::make_pair(i,pGraph_v));
-					//mSpreadIncrement_Old[v]=0.0;
 				}
+
 			}
-		}
-	);
+	}
+
 /*
-	// build PeerSeeds
+	//build PeerSeeds
+	//Failure due to the insufficient memory
 	for (int v =0; v<pGraph->GetNodes();++v)
 		if(pGraph->IsNode(v))
 			mPeerSeeds[v]=GetPeerSeeds(mMIOAs,v);
 */
 
-
+	cout<<"--------------------------Finished Initialization---------------------"<<endl;
 
 	for (int i=0;i<numRounds;++i)
 	{
-		// select the i'th seed by finding u = argmax(mSpreadIncrement)
+		/* select the i'th seed by finding u = argmax(mSpreadIncrement)*/
 		auto it = std::max_element(mSpreadIncrement.begin(),mSpreadIncrement.end(),
 							[&](std::pair<int,double> const& a, std::pair<int,double> const& b) {
 								 return a.second < b.second;
@@ -505,19 +510,6 @@ std::vector<int> MaxIncrementalInfluence(TPt<TNodeEDatNet<TFlt, TFlt>>& pGraph, 
 		int SeedID = it->first;
 		cout << SeedID <<endl;
 
-		/*while(true)
-		{
-			auto it = std::max_element(mSpreadIncrement.begin(),mSpreadIncrement.end(),
-					[&](std::pair<int,double> const& a, std::pair<int,double> const& b) {
-						 return a.second < b.second;
-						 }
-					);
-			SeedID = it->first;
-			auto result = std::find(vSeedSet.begin(),vSeedSet.end(), SeedID);
-			if (result == vSeedSet.end()) break;
-			else mSpreadIncrement.erase(SeedID);
-		}*/
-
 		/* calculate the current influence spread */
 		vSeedSet.push_back(SeedID);
 		pGraph = GenerateDAG1(pGraph, vSeedSet, 0.0);
@@ -525,101 +517,39 @@ std::vector<int> MaxIncrementalInfluence(TPt<TNodeEDatNet<TFlt, TFlt>>& pGraph, 
 		influence = InfluenceSpreadFromSeedNodes(pGraph);
 
 		/*remove the newly selected node*/
-		mSpreadIncrement.erase(SeedID);
-		//mSpreadIncrement_Old = mSpreadIncrement;
-
+		mSpreadIncrement.unsafe_erase(SeedID);
 
 		/* update incremental influence spread for each round */
 		double Delta_MAX = 0.0;
-		for(int v=0; v<pGraph->GetMxNId() ;++v)
+		std::vector<int> vSeedSet_temp = vSeedSet;
+		#pragma omp parallel shared(pGraph,chunk,vSeedSet,mSpreadIncrement,Delta_MAX) private(pGraph_temp,vSeedSet_temp,i)
 		{
-			/* exclude the nodes in seed set */
-			auto result = std::find(vSeedSet.begin(),vSeedSet.end(), v);
-			if (result != vSeedSet.end()) continue;
-			//cout<<pGraph->IsNode(v)<<" , "<<mSpreadIncrement[v]<<endl;
-			if(pGraph->IsNode(v) && mSpreadIncrement[v] > Delta_MAX)
-			{
-				vSeedSet.push_back(v);
-				auto pGraph_v = GenerateDAG1(pGraph, vSeedSet, 0);
-				ParallelBPFromNode_1DPartitioning(pGraph_v, vSeedSet);
-				mSpreadIncrement[v]=InfluenceSpreadFromSeedNodes(pGraph_v)-influence;
-				if (mSpreadIncrement[v]> Delta_MAX)
-					Delta_MAX = mSpreadIncrement[v];
-				vSeedSet.pop_back();
-			}
+			#pragma omp for schedule(dynamic,chunk) nowait
+				for (i =0;i<numNodes;++i)
+				{
+					/* exclude the nodes in seed set */
+					auto result = std::find(vSeedSet.begin(),vSeedSet.end(), i);
+					if (result != vSeedSet.end()) continue;
+
+					if(pGraph->IsNode(i) && mSpreadIncrement[i] > Delta_MAX)
+					{
+						/*different processors use different copied vSeedSet*/
+						vSeedSet_temp.push_back(i);
+
+						pGraph_temp = GenerateDAG1(pGraph, vSeedSet_temp, 0);
+						ParallelBPFromNode_1DPartitioning(pGraph_temp, vSeedSet_temp);
+						mSpreadIncrement[i]=InfluenceSpreadFromSeedNodes(pGraph_temp)-influence;
+						if (mSpreadIncrement[i]> Delta_MAX)
+						{
+							tbb::spin_mutex::scoped_lock lock(sMutex);
+							Delta_MAX = mSpreadIncrement[i];
+						}
+						vSeedSet_temp.pop_back();
+					}
+				}
 		}
 	}
-
 	return vSeedSet;
 }
 
 
-/*
-tbb::concurrent_unordered_map<int,int> ParallelBetweennessCentrality(const TPt<TNodeEDatNet<TFlt, TFlt>>& pGraph)
-{
-	tbb::concurrent_unordered_map<int,int> centralityNodes;
-    tbb::spin_mutex sMutex;
-
-	int numNodes = pGraph->GetNodes();
-	tbb::parallel_for(tbb::blocked_range<int>(0, numNodes, 50),
-		[&](const tbb::blocked_range<int>& r)
-		{
-			for (int i=r.begin();i!=r.end();++i){
-				if (pGraph->IsNode(i))
-				{
-					auto pGraph_v = TNodeEDatNet<TFlt, TFlt>::New();
-					for (auto NI = pGraph->BegNI(); NI < pGraph->EndNI(); NI++)
-					{
-						pGraph_v->AddNode(NI.GetId());
-						pGraph_v->SetNDat(NI.GetId(),DBL_MAX);
-					}
-					std::map<int, bool> visitedNodes;
-					std::priority_queue<std::pair<int,double>, std::vector<std::pair<int,double>>, Order> nodesToVisit;
-
-					// Distance from source node to itself is 0
-					pGraph_v->SetNDat(i, 0);
-					nodesToVisit.push(std::make_pair(i,0));
-
-					// Beginning of the loop of Dijkstra algorithm
-					while(!nodesToVisit.empty())
-					{
-						// Find the vertex in queue with the smallest distance and remove it
-						int iParentID = -1;
-						while (!nodesToVisit.empty() && visitedNodes[iParentID = nodesToVisit.top().first])
-							nodesToVisit.pop();
-						if (iParentID == -1) break;
-
-						{
-							tbb::spin_mutex::scoped_lock lock(sMutex);
-							centralityNodes[iParentID]+=1;
-						}
-						// mark the vertex with the shortest distance
-						visitedNodes[iParentID]=true;
-
-						auto parent = pGraph->GetNI(iParentID);
-						int numChildren = parent.GetOutDeg();
-						for(int i = 0; i < numChildren; ++i)
-						{
-							int iChildID = parent.GetOutNId(i);
-							// Accumulate the shortest distance from source
-							double alt = pGraph_v->GetNDat(iParentID) - log(parent.GetOutEDat(i).Val);
-							auto it = visitedNodes.find(iChildID);
-							if (alt < pGraph_v->GetNDat(iChildID) && it->second == false)
-							{
-								//1. update distance
-								//2. push new shortest rank of chidren nodes
-								pGraph_v->SetNDat(iChildID, alt);
-								nodesToVisit.push(std::make_pair(iChildID,alt));
-							}
-						}
-
-					}// End of Dijkstra
-				}
-			}
-
-		}
-	);
-
-	return centralityNodes;
-}
-*/

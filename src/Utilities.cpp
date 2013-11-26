@@ -1,16 +1,11 @@
 #include <iostream>
+#include <fstream>
 #include <map>
 #include <algorithm>
 #include <queue>
 #include <float.h>
-#include <tbb/spin_mutex.h>
-#include <tbb/concurrent_unordered_map.h>
-#include <tbb/parallel_for.h>
-#include <tbb/concurrent_vector.h>
 #include "Utilities.h"
-#include "BP.h"
 #include <Snap.h>
-
 
 
 using namespace std;
@@ -180,29 +175,50 @@ TPt<TNodeEDatNet<TFlt, TFlt>> GenerateRandomBayesianNetwork(unsigned int minNumN
 	}
 	return pGraph;
 }
-// before generating DAG
-void RandomGraphInitialization(TPt<TNodeEDatNet<TFlt, TFlt>> &pGraph)
+
+TPt<TNodeEDatNet<TFlt, TFlt>> CopyGraph(const TPt<TNodeEDatNet<TFlt, TFlt>> &pGraph)
+{
+	// Copy the nodes of pGraph
+	auto pCopy = TNodeEDatNet<TFlt, TFlt>::New();
+	for (auto NI = pGraph->BegNI(); NI < pGraph->EndNI(); NI++)
+	{
+		int NodeID = NI.GetId();
+		pCopy->AddNode(NodeID);
+		pCopy->SetNDat(NodeID, NI.GetDat().Val);
+	}
+	for (auto EI = pGraph->BegEI(); EI < pGraph->EndEI(); EI++)
+	{
+		pCopy->AddEdge(EI.GetSrcNId(), EI.GetDstNId());
+		pCopy->SetEDat(EI.GetSrcNId(), EI.GetDstNId(), EI.GetDat().Val);
+	}
+	return pCopy;
+}
+
+void AddSuperRootNode(TPt<TNodeEDatNet<TFlt, TFlt>>& pGraph, const std::vector<int> &vSeedNodes, int superRootNodeID)
+{
+	pGraph->AddNode(superRootNodeID);
+	pGraph->SetNDat(superRootNodeID, 1.0);
+	for(int srcNode: vSeedNodes)
+	{
+		pGraph->AddEdge(superRootNodeID, srcNode);
+		pGraph->SetEDat(superRootNodeID, srcNode, 1.0);
+	}
+}
+
+void RandomGraphInitialization(TPt<TNodeEDatNet<TFlt, TFlt>> &pGraph, double&& min, double&& max)
 {
 	srand(time(NULL));
 	for (auto EI = pGraph->BegEI(); EI < pGraph->EndEI(); EI++)
-		pGraph->SetEDat(EI.GetSrcNId(), EI.GetDstNId(), (double) rand() / RAND_MAX);
+		pGraph->SetEDat(EI.GetSrcNId(), EI.GetDstNId(), min + (double) rand() /(RAND_MAX / (max - min)));
 	for (auto NI = pGraph->BegNI(); NI < pGraph->EndNI(); NI++)
 		pGraph->SetNDat(NI.GetId(), 0.0);
 }
 
-// before belief propagation
-void InitializationBeforePropagation(TPt<TNodeEDatNet<TFlt, TFlt>>& pGraph)
+void ResetGraphBelief(TPt<TNodeEDatNet<TFlt, TFlt>> &pGraph)
 {
-
 	for (auto NI = pGraph->BegNI(); NI < pGraph->EndNI(); NI++)
 		pGraph->SetNDat(NI.GetId(), 0.0);
 }
-
-
-struct Order
-{
-    inline bool operator()(std::pair<int,double> const& a, std::pair<int,double> const& b) const {return a.second > b.second;}
-};
 
 //! Given pGraph with data about edge weights, computes the distance of the shortest paths from sourceNode
 //! and returns the result in the nodes of pDAGGraph.
@@ -218,6 +234,8 @@ void Dijkstra(const TPt<TNodeEDatNet<TFlt, TFlt>>& pGraph, int sourceNode, doubl
 	std::map<int, bool> visitedNodes;
 	// Stores the edge vertices to build the final DAG
 	std::map<int, int> mapPrevious;
+
+	struct Order	{inline bool operator()(std::pair<int,double> const& a, std::pair<int,double> const& b) const	{return a.second > b.second;}};
 	std::priority_queue<std::pair<int,double>, std::vector<std::pair<int,double>>, Order> nodesToVisit;
 
 	// Distance from source node to itself is 0
@@ -247,7 +265,7 @@ void Dijkstra(const TPt<TNodeEDatNet<TFlt, TFlt>>& pGraph, int sourceNode, doubl
 			if(alt >= logThreshold)
 			{
 				auto it = visitedNodes.find(iChildID);
-				if (alt < pDAGGraph->GetNDat(iChildID) && it->second == false)
+				if (alt < pDAGGraph->GetNDat(iChildID) && it == visitedNodes.end())
 				{
 					//1. update distance
 					//2. update the predecessor
@@ -309,17 +327,10 @@ TPt<TNodeEDatNet<TFlt, TFlt>> GenerateDAG1(const TPt<TNodeEDatNet<TFlt, TFlt>> &
 	}
 
 	// Create a super root in order to update in one pass all the shortest paths from vSeedIDs nodes
-	int superRootID =  pGraph_DAG1->GetMxNId()+1;
-	pGraph_DAG1->AddNode(superRootID);
-
-	for(int srcNode: seedNodes)
-	{
-		pGraph_DAG1->AddEdge(superRootID, srcNode);
-		pGraph_DAG1->SetEDat(superRootID, srcNode, 1.0);
-	}
-	pGraph_DAG1 = MIOA(pGraph_DAG1, superRootID, threshold);
+	AddSuperRootNode(pGraph_DAG1, seedNodes);
+	pGraph_DAG1 = MIOA(pGraph_DAG1, INT_MAX, threshold);
 	// Remove the artificial super root node
-	pGraph_DAG1->DelNode(superRootID);
+	pGraph_DAG1->DelNode(INT_MAX);
 
 
 	// Add back other edges with the condition r(u)<r(v)
@@ -335,6 +346,7 @@ TPt<TNodeEDatNet<TFlt, TFlt>> GenerateDAG1(const TPt<TNodeEDatNet<TFlt, TFlt>> &
 			}
 		}
 	}
+
 	//Reset Node data from the original graph
 	for (auto NI = pGraph->BegNI(); NI < pGraph->EndNI(); NI++)
 		pGraph_DAG1->SetNDat(NI.GetId(),NI.GetDat().Val);
@@ -377,7 +389,7 @@ TPt<TNodeEDatNet<TFlt, TFlt>> GraphUnion(const std::vector<TPt<TNodeEDatNet<TFlt
 
 	return pOut;
 }
-//???????
+
 TPt<TNodeEDatNet<TFlt, TFlt>> GenerateDAG2(const TPt<TNodeEDatNet<TFlt, TFlt>>& pGraph, const std::vector<int> &vSeedIDs, double dThreshold)
 {
 	// Vector of MIOA graphs per seed node
@@ -397,16 +409,10 @@ TPt<TNodeEDatNet<TFlt, TFlt>> GenerateDAG2(const TPt<TNodeEDatNet<TFlt, TFlt>>& 
 		pOut->SetEDat(EI.GetSrcNId(), EI.GetDstNId(), pGraph->GetEDat(EI.GetSrcNId(), EI.GetDstNId()));
 
 	// Create a super root in order to update in one pass all the shortest paths from vSeedIDs nodes
-	int superRootID = pGraph->GetMxNId()+1;
-	pOut->AddNode(superRootID);
-	for(auto it=vSeedIDs.begin(); it!=vSeedIDs.end(); ++it)
-	{
-		pOut->AddEdge(superRootID, *it);
-		pOut->SetEDat(superRootID, *it, 1.0);
-	}
-	Dijkstra(pOut, superRootID, dThreshold, pOut);
+	AddSuperRootNode(pOut, vSeedIDs);
+	Dijkstra(pOut, INT_MAX, dThreshold, pOut);
 	// Remove the artificial super root node
-	pOut->DelNode(superRootID);
+	pOut->DelNode(INT_MAX);
 
 	// Traverse the edges and prune the graph
 	for (auto EI = pOut->BegEI(); EI < pOut->EndEI(); EI++)
@@ -414,10 +420,6 @@ TPt<TNodeEDatNet<TFlt, TFlt>> GenerateDAG2(const TPt<TNodeEDatNet<TFlt, TFlt>>& 
 		if(EI.GetDstNDat().Val < EI.GetSrcNDat().Val)
 			pOut->DelEdge(EI.GetSrcNId(), EI.GetDstNId());
 	}
-
-	//Reset Node data from the original graph
-	for (auto NI = pGraph->BegNI(); NI < pGraph->EndNI(); NI++)
-		pOut->SetNDat(NI.GetId(),NI.GetDat().Val);
 
 	return pOut;
 }
@@ -429,131 +431,222 @@ TPt<TNodeEDatNet<TFlt, TFlt>> GenerateDAG2(const TPt<TNodeEDatNet<TFlt, TFlt>>& 
 	return GenerateDAG2(pGraph, vSeedIDs, dThreshold);
 }
 
+// End of DAG2
 
-std::vector<int> GetPeerSeeds(std::map<int,TPt<TNodeEDatNet<TFlt, TFlt>> > mMIOAs, int nodeID)
+void CalculateRankFromSource_BellmanFord(const TPt<TNodeEDatNet<TFlt, TFlt>> &pGraph, int sourceNode, std::vector<int> &vResult)
 {
-	std::vector<int> vPeerSeeds;
-	for(auto it = mMIOAs.begin(); it!= mMIOAs.end(); it++)
+	int numNodes = pGraph->GetNodes();
+	vResult.reserve(numNodes);
+	for(int i = 0; i<numNodes; ++i)
+		vResult.push_back(INT_MAX);
+	vResult[sourceNode]=0;
+
+	for (size_t i = 0; i < (vResult.size() - 1); ++i)
 	{
-		if(it->first!=nodeID)
+		for (auto EI = pGraph->BegEI(); EI < pGraph->EndEI(); EI++)
 		{
-			int isOverlapped = false;
-			auto pMIOA = it->second;
-			for(auto v = mMIOAs[nodeID]->BegNI(); v < mMIOAs[nodeID]->EndNI();v++)
-			{
-				if (isOverlapped) break;
-				for(auto u = pMIOA->BegNI();u < pMIOA->EndNI(); u++)
-				{
-					if(v.GetId()== u.GetId())
-					{
-						isOverlapped = true;
-						break;
-					}
-				}
-			}
-			if(isOverlapped) vPeerSeeds.push_back(it->first);
+			double alt = vResult[EI.GetSrcNId()] - 1;
+			if (alt < vResult[EI.GetDstNId()])
+				vResult[EI.GetDstNId()] = alt;
 		}
-		else continue;
 	}
 
-	return vPeerSeeds;
+	for (auto EI = pGraph->BegEI(); EI < pGraph->EndEI(); EI++)
+	{
+		if ((vResult[EI.GetSrcNId()] - 1) < vResult[EI.GetDstNId()])
+		{
+			std::cerr<<"Bellman Ford error : Negative cycle detected";
+			exit(-1);
+		}
+	}
+
+	// Revert the rank to positive values
+	for(int i = 0; i<numNodes; ++i)
+		vResult[i] *= -1;
 }
 
-std::vector<int> MaxIncrementalInfluence(TPt<TNodeEDatNet<TFlt, TFlt>>& pGraph, int numRounds){
+void CalculateRankFromSource_BellmanFord(const TPt<TNodeEDatNet<TFlt, TFlt>> &pGraph, const std::vector<int> vSeedNodes, std::vector<int> &vResult)
+{
+	auto pTemp = CopyGraph(pGraph);
+	int superRootNodeID = pGraph->GetMxNId();
+	AddSuperRootNode(pTemp, vSeedNodes, superRootNodeID);
+	CalculateRankFromSource_BellmanFord(pTemp, superRootNodeID, vResult);
+}
 
-	std::vector<int> vSeedSet;
-	tbb::concurrent_unordered_map<int,double> mSpreadIncrement;;
-	double influence = 0.0;
-	static tbb::spin_mutex sMutex;
+void CalculateRankFromSource(const TPt<TNodeEDatNet<TFlt, TFlt>> &pGraph, int sourceNode, std::vector<int> &vResult)
+{
+	int currentRank=0;
+	int numNodes = pGraph->GetNodes();
+	vResult.reserve(pGraph->GetNodes());
+	for(int i = 0; i<numNodes; ++i)
+		vResult.push_back(INT_MAX);
+	vResult[sourceNode]=0;
+	++currentRank;
 
-	//Failure of using PeerSeeds due to insufficient memory
-	//std::map<int,std::vector<int> > mPeerSeeds;
-	//std::map<int,TPt<TNodeEDatNet<TFlt, TFlt>> > mMIOAs;
+	// Used to store the nodes which have been traversed during the breadth-first search traversal
+	std::map<int, bool> visitedNodes;
+	std::queue<int> queue;
+	queue.push(sourceNode);
+	visitedNodes[sourceNode] = true;
 
-	/* Initialization*/
-	int numNodes = pGraph->GetMxNId();
-	tbb::parallel_for(tbb::blocked_range<int>(0, numNodes, 100),
-		[&](const tbb::blocked_range<int>& r)
-		{
-			for (int i=r.begin();i!=r.end();++i){
-				if(pGraph->IsNode(i))
-				{
-					auto pGraph_v = MIOA(pGraph, i, 0);
-					InitializationBeforePropagation(pGraph_v);
-					ParallelBPFromNode_1DPartitioning(pGraph_v, i);
-					mSpreadIncrement[i]=InfluenceSpreadFromSeedNodes(pGraph_v);
-					//mMIOAs.insert(std::make_pair(i,pGraph_v));
-					//cout<< i <<endl;
-				}
-			}
-		}
-	);
-/*
-	//build PeerSeeds
-	//Failure due to the insufficient memory
-	for (int v =0; v<pGraph->GetNodes();++v)
-		if(pGraph->IsNode(v))
-			mPeerSeeds[v]=GetPeerSeeds(mMIOAs,v);
-*/
-
-	cout<<"--------------------------finish precomputation---------------------"<<endl;
-	for (int i=0;i<numRounds;++i)
+	while(!queue.empty())
 	{
-		/* select the i'th seed by finding u = argmax(mSpreadIncrement)*/
-		auto it = std::max_element(mSpreadIncrement.begin(),mSpreadIncrement.end(),
-							[&](std::pair<int,double> const& a, std::pair<int,double> const& b) {
-								 return a.second < b.second;
-								 }
-							);
-		int SeedID = it->first;
-		cout << SeedID <<endl;
-
-		/* calculate the current influence spread */
-		vSeedSet.push_back(SeedID);
-		pGraph = GenerateDAG1(pGraph, vSeedSet, 0.0);
-		ParallelBPFromNode_1DPartitioning(pGraph, vSeedSet);
-		influence = InfluenceSpreadFromSeedNodes(pGraph);
-
-		/*remove the newly selected node*/
-		mSpreadIncrement.unsafe_erase(SeedID);
-
-		/* update incremental influence spread for each round */
-		double Delta_MAX = 0.0;
-		tbb::parallel_for(tbb::blocked_range<int>(0, numNodes, 100),
-			[&](const tbb::blocked_range<int>& r)
+		int numNodesToProcess = queue.size();
+		for(int i=0; i< numNodesToProcess; ++i)
+		{
+			int nodeID = queue.front();
+			auto parent = pGraph->GetNI(nodeID);
+			int numChildren = parent.GetOutDeg();
+			for(int i = 0; i < numChildren; ++i)
 			{
-				for (int i=r.begin();i!=r.end();++i)
-				{
-					/* exclude the nodes in seed set */
-					auto result = std::find(vSeedSet.begin(),vSeedSet.end(), i);
-					if (result != vSeedSet.end()) continue;
-					//cout<<pGraph->IsNode(v)<<" , "<<mSpreadIncrement[v]<<endl;
-
-					if(pGraph->IsNode(i) && mSpreadIncrement[i] > Delta_MAX)
-					{
-						/*different processors use different copied vSeedSet*/
-						std::vector<int> vSeedSet_v = vSeedSet;
-						vSeedSet_v.push_back(i);
-
-						auto pGraph_v = GenerateDAG1(pGraph, vSeedSet_v, 0);
-						ParallelBPFromNode_1DPartitioning(pGraph_v, vSeedSet_v);
-						mSpreadIncrement[i]=InfluenceSpreadFromSeedNodes(pGraph_v)-influence;
-						if (mSpreadIncrement[i]> Delta_MAX)
-						{
-							tbb::spin_mutex::scoped_lock lock(sMutex);
-							Delta_MAX = mSpreadIncrement[i];
-						}
-						vSeedSet_v.pop_back();
-					}
-				}
-
+				int iChildID = parent.GetOutNId(i);
+				// If we update a node which has already been updated previously, we need to add it back to the queue to update the other nodes.
+				if(vResult[iChildID]<currentRank)
+					visitedNodes.erase(iChildID);
+				vResult[iChildID] = currentRank;
+				// Mark the child
+				if(visitedNodes.insert(std::pair<int,bool>(iChildID,true)).second)
+					queue.push(iChildID);
 			}
-		);
+
+			queue.pop();
+		}
+		++currentRank;
+	}
+}
+
+void CalculateRankFromSource(const TPt<TNodeEDatNet<TFlt, TFlt>> &pGraph, const std::vector<int> vSeedNodes, std::vector<int> &vResult)
+{
+	auto pTemp = CopyGraph(pGraph);
+	int superRootNodeID = pGraph->GetMxNId();
+	AddSuperRootNode(pTemp, vSeedNodes, superRootNodeID);
+	CalculateRankFromSource(pTemp, superRootNodeID, vResult);
+}
 
 
+int GetNumOfReachableNodesFromSource(const TPt<TNodeEDatNet<TFlt, TFlt>> &pGraph,int sourceNode, std::vector<int> &vResult)
+{
+	std::map<int, bool> visitedNodes;
+	std::queue<int> queue;
+	queue.push(sourceNode);
+	visitedNodes[sourceNode] = true;
+
+	while(!queue.empty())
+	{
+		int numNodesToProcess = queue.size();
+		for(int i=0; i< numNodesToProcess; ++i)
+		{
+			int nodeID = queue.front();
+			auto parent = pGraph->GetNI(nodeID);
+			int numChildren = parent.GetOutDeg();
+			for(int i = 0; i < numChildren; ++i)
+			{
+				int iChildID = parent.GetOutNId(i);
+				// Mark the child
+				if(visitedNodes.insert(std::pair<int,bool>(iChildID,true)).second)
+					{
+						queue.push(iChildID);
+						vResult.push_back(iChildID);
+					}
+			}
+			queue.pop();
+		}
 	}
 
-	return vSeedSet;
+	return visitedNodes.size();
+
+}
+
+int GetNumOfReachableNodesFromSource(const TPt<TNodeEDatNet<TFlt, TFlt>> &pGraph,const std::vector<int> vSeedNodes, std::vector<int> &vResult)
+{
+	auto pTemp = CopyGraph(pGraph);
+	int superRootNodeID = pGraph->GetMxNId();
+	AddSuperRootNode(pTemp, vSeedNodes, superRootNodeID);
+	// SuperRootNode doesn't count
+	int numNodes = GetNumOfReachableNodesFromSource(pTemp, superRootNodeID, vResult) - 1;
+
+	return numNodes;
+}
+
+int GetNumOfReachableNodesFromSource(const TPt<TNodeEDatNet<TFlt, TFlt>> &pGraph,int sourceNode)
+{
+	std::map<int, bool> visitedNodes;
+	std::queue<int> queue;
+	queue.push(sourceNode);
+	visitedNodes[sourceNode] = true;
+
+	while(!queue.empty())
+	{
+		int numNodesToProcess = queue.size();
+		for(int i=0; i< numNodesToProcess; ++i)
+		{
+			int nodeID = queue.front();
+			auto parent = pGraph->GetNI(nodeID);
+			int numChildren = parent.GetOutDeg();
+			for(int i = 0; i < numChildren; ++i)
+			{
+				int iChildID = parent.GetOutNId(i);
+				// Mark the child
+				if(visitedNodes.insert(std::pair<int,bool>(iChildID,true)).second)
+					{
+						queue.push(iChildID);
+					}
+			}
+			queue.pop();
+		}
+	}
+	return visitedNodes.size();
+}
+
+int GetNumOfReachableNodesFromSource(const TPt<TNodeEDatNet<TFlt, TFlt>> &pGraph,const std::vector<int> vSeedNodes)
+{
+	auto pTemp = CopyGraph(pGraph);
+	int superRootNodeID = pGraph->GetMxNId();
+	AddSuperRootNode(pTemp, vSeedNodes, superRootNodeID);
+	// SuperRootNode doesn't count
+	int numNodes = GetNumOfReachableNodesFromSource(pTemp, superRootNodeID) - 1;
+
+	return numNodes;
+}
+
+
+double BPError(const TPt<TNodeEDatNet<TFlt, TFlt>>& pGraph1, const TPt<TNodeEDatNet<TFlt, TFlt>>& pGraph2, const std::function<double(double, double)> &fn)
+{
+	double error=0.0;
+	unsigned int count=0;
+	for(auto NI=pGraph1->BegNI(); NI < pGraph1->EndNI(); NI++)
+	{
+
+		if(NI.GetDat().Val != 0.0 || pGraph2->GetNDat(NI.GetId()).Val != 0.0)
+		{
+			++count;
+			error+=fn(NI.GetDat().Val, pGraph2->GetNDat(NI.GetId()).Val);
+		}
+	}
+	return error/count;
+}
+
+void SaveEdgeWeightsToFile(const TPt<TNodeEDatNet<TFlt, TFlt>>& pGraph, const std::string &fileName)
+{
+        std::ofstream fOut(fileName.c_str(), std::ios_base::ate);
+        for(auto EI = pGraph->BegEI(); EI < pGraph->EndEI(); EI++)
+                fOut << EI.GetSrcNId() << " " << EI.GetDstNId() << " " << EI.GetDat().Val << std::endl;
+        fOut.close();
+}
+
+void LoadEdgeWeightsFromFile(TPt<TNodeEDatNet<TFlt, TFlt>>& pGraph, const std::string &fileName)
+{
+        std::ifstream fIn(fileName.c_str());
+        char line[256];
+        int source, dest;
+        double value;
+        while(!fIn.eof())
+        {
+                fIn >> source >> dest >> value;
+                pGraph->SetEDat(source, dest, value);
+        }
+
+        fIn.close();
 }
 
 
