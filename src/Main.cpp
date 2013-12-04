@@ -12,13 +12,15 @@ using namespace std;
 //#define _TEST_DAG2
 //#define _TEST_GRAPH
 //#define _TEST_Email_EuAll
-//#define _TEST_p2p_Gnutella04
+#define _TEST_p2p_Gnutella04
 //#define _LOAD_FROM_FILE
 //#define _SAVE_TO_FILE
 //#define _TEST_Amazon0302
 //#define _TEST_Slashdot0902
-#define _CREATE_DATA_SETS
+//#define _CREATE_DATA_SETS
 //#define _TEST_EDGE_SAVE
+//#define _DISPLAY_NETWORKS_INFO
+//#define _TEST_web-Stanford
 
 
 
@@ -33,13 +35,15 @@ void TestGraph(TPt<TNodeEDatNet<TFlt, TFlt>>& pGraph, std::vector<int> vSeedIDs,
 	cout << "}\nThe input graph has " << pGraph->GetNodes() << " nodes and " << pGraph->GetEdges() << " edges.\n";
 
 	auto pGraph_test = CopyGraph(pGraph);
+
 	// Start traversing the graph
 	tbb::tick_count tic = tbb::tick_count::now();
 	for(int i = 0; i<numIterations; ++i)
 		ParallelBPFromNode(pGraph_test, vSeedIDs);
 	double dElapsedTime = (tbb::tick_count::now() - tic).seconds();
 	cout << "Time elapsed for parallel BP: " << dElapsedTime/numIterations << " seconds\n";
-	cout<<"The influence spread speed is: "<<InfluenceSpreadFromSeedNodes(pGraph_test)<<endl;
+	cout<<"The influence spread is: "<<InfluenceSpreadFromSeedNodes(pGraph_test)<<endl;
+
 
 	pGraph_test = CopyGraph(pGraph);
 	tic = tbb::tick_count::now();
@@ -47,7 +51,7 @@ void TestGraph(TPt<TNodeEDatNet<TFlt, TFlt>>& pGraph, std::vector<int> vSeedIDs,
 		ParallelBPFromNode_LevelSynchronous(pGraph_test, vSeedIDs);
 	dElapsedTime = (tbb::tick_count::now() - tic).seconds();
 	cout << "Time elapsed for parallel level synchronous BP: " << dElapsedTime/numIterations << " seconds\n";
-	cout<<"The influence spread speed is: "<<InfluenceSpreadFromSeedNodes(pGraph_test)<<endl;
+	cout<<"The influence spread is: "<<InfluenceSpreadFromSeedNodes(pGraph_test)<<endl;
 
 	pGraph_test = CopyGraph(pGraph);
 	tic = tbb::tick_count::now();
@@ -55,11 +59,11 @@ void TestGraph(TPt<TNodeEDatNet<TFlt, TFlt>>& pGraph, std::vector<int> vSeedIDs,
 		PropagateFromNode(pGraph_test, vSeedIDs);
 	dElapsedTime = (tbb::tick_count::now() - tic).seconds();
 	cout << "Time elapsed for serial BP: " << dElapsedTime/numIterations << " seconds\n";
-	cout<<"The influence spread speed is: "<<InfluenceSpreadFromSeedNodes(pGraph_test)<<endl;
+	cout<<"The influence spread is: "<<InfluenceSpreadFromSeedNodes(pGraph_test)<<endl;
 
 	pGraph_test = CopyGraph(pGraph);
 	std::vector<int> vResult;
-	CalculateRankFromSource(pGraph, vSeedIDs, vResult);
+	CalculateRankFromSource_BellmanFord(pGraph, vSeedIDs, vResult);
 	tic = tbb::tick_count::now();
 	for(int i = 0; i<numIterations; ++i)
 		ParallelBPFromNode_SingleNodeUpdate(pGraph_test, vResult, vSeedIDs);
@@ -91,7 +95,7 @@ void TestGraph(TPt<TNodeEDatNet<TFlt, TFlt>>& pGraph, int sourceNode, int numIte
 	cout << "Time elapsed for serial BP: " << dElapsedTime/numIterations << " seconds\n";
 
 	std::vector<int> vResult;
-	CalculateRankFromSource(pGraph, sourceNode, vResult);
+	CalculateRankFromSource_BellmanFord(pGraph, sourceNode, vResult);
 	tic = tbb::tick_count::now();
 	for(int i = 0; i<numIterations; ++i)
 		ParallelBPFromNode_SingleNodeUpdate(pGraph, vResult, sourceNode);
@@ -126,7 +130,7 @@ void TestGraphDAG(TPt<TNodeEDatNet<TFlt, TFlt>>& pGraph, std::vector<int> vSeedI
 	cout << "Time elapsed for serial BP: " << dElapsedTime/numIterations << " seconds\n";
 
 	std::vector<int> vResult;
-	CalculateRankFromSource(pGraph, vSeedIDs, vResult);
+	CalculateRankFromSource_BellmanFord(pGraph, vSeedIDs, vResult);
 	tic = tbb::tick_count::now();
 	for(int i = 0; i<numIterations; ++i)
 		ParallelBPFromNode_SingleNodeUpdate(pGraph, vResult, vSeedIDs);
@@ -158,12 +162,65 @@ void TestGraphDAG(TPt<TNodeEDatNet<TFlt, TFlt>>& pGraph, int sourceNode, int num
 
 	//auto rankGraph = CalculateRankFromSource(pGraph, sourceNode);
 	std::vector<int> vResult;
-	CalculateRankFromSource(pGraph, sourceNode, vResult);
+	CalculateRankFromSource_BellmanFord(pGraph, sourceNode, vResult);
 	tic = tbb::tick_count::now();
 	for(int i = 0; i<numIterations; ++i)
 		ParallelBPFromNode_SingleNodeUpdate(pGraph, vResult, sourceNode);
 	dElapsedTime = (tbb::tick_count::now() - tic).seconds();
 	cout << "Time elapsed for ParallelBPFromNode_SingleNodeUpdate: " << dElapsedTime/numIterations << " seconds\n";
+}
+
+
+void TestInfluenceSpread(TPt<TNodeEDatNet<TFlt, TFlt>>& pGraph)
+{
+
+	auto pGraph_test = CopyGraph(pGraph);
+	std::vector<int> vSeedSet;
+/*	tbb::tick_count tic = tbb::tick_count::now();
+	ParallelGreedyCELF(pGraph_test ,30, vSeedSet);
+	double dElapsedTime = (tbb::tick_count::now() - tic).seconds();
+	pGraph_test = GenerateDAG1(pGraph_test , vSeedSet, 0);
+	ParallelBPFromNode_LevelSynchronous(pGraph_test , vSeedSet);
+	cout<< "Time elapsed for ParallelGreedyCELF: " << dElapsedTime << " seconds\n";
+	cout<<"The influence spread for ParallelGreedyCELF is: "<<InfluenceSpreadFromSeedNodes(pGraph_test)<<endl;
+*/
+/*
+	pGraph_test = CopyGraph(pGraph);
+	vSeedSet.clear();
+	tbb::tick_count tic = tbb::tick_count::now();
+	GreedyCELF(pGraph_test ,30, vSeedSet);
+	double dElapsedTime = (tbb::tick_count::now() - tic).seconds();
+	pGraph_test = GenerateDAG1(pGraph_test , vSeedSet, 0);
+	ParallelBPFromNode_LevelSynchronous(pGraph_test , vSeedSet);
+	cout<< "Time elapsed for GreedyCELF: " << dElapsedTime << " seconds\n";
+	cout<<"The influence spread  for GreedyCELF is: "<<InfluenceSpreadFromSeedNodes(pGraph_test)<<endl;
+*/
+
+/*
+	pGraph_test = CopyGraph(pGraph);
+	vSeedSet.clear();
+	tbb::tick_count tic = tbb::tick_count::now();
+	ParallelNewGreedIC(pGraph_test, 30 ,1000, vSeedSet);
+	double dElapsedTime = (tbb::tick_count::now() - tic).seconds();
+	pGraph_test = GenerateDAG1(pGraph_test, vSeedSet, 0);
+	ParallelBPFromNode_LevelSynchronous(pGraph_test, vSeedSet);
+	cout<< "Time elapsed for ParallelNewGreedIC: " << dElapsedTime << " seconds\n";
+	cout<<"The influence spread for ParallelNewGreedIC is: "<<InfluenceSpreadFromSeedNodes(pGraph_test)<<endl;
+*/
+
+	pGraph_test = CopyGraph(pGraph);
+	vSeedSet.clear();
+	tbb::tick_count tic = tbb::tick_count::now();
+	NewGreedIC(pGraph_test, 30 ,1000, vSeedSet);
+	double dElapsedTime = (tbb::tick_count::now() - tic).seconds();
+	pGraph_test = GenerateDAG1(pGraph_test, vSeedSet, 0);
+	ParallelBPFromNode_LevelSynchronous(pGraph_test, vSeedSet);
+	cout<< "Time elapsed for NewGreedIC: " << dElapsedTime << " seconds\n";
+	cout<<"The influence spread for NewGreedIC is: "<<InfluenceSpreadFromSeedNodes(pGraph_test)<<endl;
+
+
+
+
 }
 
 int main(int argc, char* argv[])
@@ -265,16 +322,16 @@ int main(int argc, char* argv[])
 
 #ifdef _TEST_p2p_Gnutella04
 	auto pGraph = TSnap::LoadEdgeList<TPt<TNodeEDatNet<TFlt, TFlt>>>("datasets/p2p-Gnutella04.txt", 0, 1);
-	RandomGraphInitialization(pGraph,0.01,0.1);
+	LoadEdgeWeightsFromFile(pGraph, "datasets/p2p-Gnutella04-Network.txt");
+/*
 	std::vector<int> vSeedNodeIDs;
-	vSeedNodeIDs.push_back(3109);
-	vSeedNodeIDs.push_back(5617);
+	vSeedNodeIDs.push_back(0);
+	vSeedNodeIDs.push_back(3);
 	vSeedNodeIDs.push_back(9134);
-	//pGraph = GenerateDAG1(pGraph, vSeedNodeIDs, 0);
-	//ParallelBPFromNodeDAG_LevelSynchronous(pGraph, vSeedNodeIDs);
-	//cout<<"The influence spread speed is: "<<InfluenceSpreadFromSeedNodes(pGraph)<<endl;
+	pGraph = GenerateDAG1(pGraph, vSeedNodeIDs, 0);
 	//pGraph = GenerateDAG2(pGraph, vSeedNodeIDs, 0);
-
+	TestGraph(pGraph, vSeedNodeIDs, 1);
+*/
 	/*
 		std::cout << "ExactBP_Marginalization(pGraph, vSeedNodeIDs)\n";	// Crash out of memory
 		ExactBP_Marginalization(pGraph, vSeedNodeIDs);
@@ -287,39 +344,7 @@ int main(int argc, char* argv[])
 		std::cout << "Error : " << BPError(ExactBPGraph, pGraph, [] (double a, double b) -> double { return abs(a-b); })  << std::endl;
 	 */
 
-	//pGraph = GenerateDAG2(pGraph, 0, 0);
-	//TestGraph(pGraph, vSeedNodeIDs, 100);
-
-
-	auto pGraph_test = CopyGraph(pGraph);
-	std::vector<int> vSeedSet;
-/*	ParallelGreedyCELF(pGraph_test , 10, vSeedSet);
-	pGraph_test = GenerateDAG1(pGraph_test , vSeedSet, 0);
-	ParallelBPFromNodeDAG_LevelSynchronous(pGraph_test , vSeedSet);
-	cout<<"The influence spread speed is: "<<InfluenceSpreadFromSeedNodes(pGraph_test)<<endl;
-*/
-/*	pGraph_test = CopyGraph(pGraph);
-	vSeedSet.clear();
-	tbb::tick_count tic = tbb::tick_count::now();
-	ParallelNewGreedIC(pGraph_test,10,1000, vSeedSet);
-	double dElapsedTime = (tbb::tick_count::now() - tic).seconds();
-	cout << "Time elapsed for Old: " << dElapsedTime << " seconds\n";
-//	pGraph_test = GenerateDAG1(pGraph_test, vSeedSet, 0);
-//	ParallelBPFromNodeDAG_LevelSynchronous(pGraph_test, vSeedSet);
-//	cout<<"The influence spread speed is: "<<InfluenceSpreadFromSeedNodes(pGraph_test)<<endl;
-
-
-
-	vSeedSet.clear();
-	//std::vector<int> vSeedSet;
-	tic = tbb::tick_count::now();
-	ParallelNewGreedIC_Nested(pGraph,10,1000, vSeedSet);
-	dElapsedTime = (tbb::tick_count::now() - tic).seconds();
-	cout << "Time elapsed for NEW: " << dElapsedTime << " seconds\n";
-	pGraph = GenerateDAG1(pGraph, vSeedSet, 0);
-	ParallelBPFromNodeDAG_LevelSynchronous(pGraph, vSeedSet);
-	cout<<"The influence spread speed is: "<<InfluenceSpreadFromSeedNodes(pGraph)<<endl;
-*/
+	TestInfluenceSpread(pGraph);
 
 
 
@@ -327,38 +352,52 @@ int main(int argc, char* argv[])
 
 #ifdef _TEST_Email_EuAll
 	auto pGraph = TSnap::LoadEdgeList<TPt<TNodeEDatNet<TFlt, TFlt>>>("datasets/Email-EuAll.txt", 0, 1);
-	/*
+	LoadEdgeWeightsFromFile(pGraph, "datasets/Email-EuAll-Network.txt");
 	std::vector<int> vSeedNodeIDs;
 	vSeedNodeIDs.push_back(0);
-	vSeedNodeIDs.push_back(2);
-	vSeedNodeIDs.push_back(6);
-    */
-	RandomGraphInitialization(pGraph);
-	std::vector<int> vSeedSet = MaxIncrementalInfluence(pGraph,5);
-	//tbb::tick_count tic = tbb::tick_count::now();
-	//pGraph = GenerateDAG1(pGraph, vSeedNodeIDs, 0);
-	//pGraph = GenerateDAG2(pGraph, 0, 0);
-	//double dElapsedTime = (tbb::tick_count::now() - tic).seconds();
-	//cout << "Time elapsed for DAG2 computation: " << dElapsedTime << " seconds\n";
-
-	//TestGraph(pGraph, 0, 100);
+	vSeedNodeIDs.push_back(3);
+	pGraph = GenerateDAG1(pGraph, vSeedNodeIDs, 0);
+	//pGraph = GenerateDAG2(pGraph, vSeedNodeIDs, 0);
+	ResetGraphBelief(pGraph);
+	TestGraph(pGraph, vSeedNodeIDs, 10);
 #endif
 
 #ifdef _TEST_Amazon0302
 	auto pGraph = TSnap::LoadEdgeList<TPt<TNodeEDatNet<TFlt, TFlt>>>("datasets/Amazon0302.txt", 0, 1);
-	RandomGraphInitialization(pGraph);
-	std::vector<int> vSeedSet;
-	MaxIncrementalInfluence(pGraph, 5, vSeedSet);
+	LoadEdgeWeightsFromFile(pGraph, "datasets/Amazon0302-Network.txt");
+	std::vector<int> vSeedNodeIDs;
+	vSeedNodeIDs.push_back(0);
+	//vSeedNodeIDs.push_back(3);
+	pGraph = GenerateDAG1(pGraph, vSeedNodeIDs, 0);
+	//pGraph = GenerateDAG2(pGraph, vSeedNodeIDs, 0);
+	ResetGraphBelief(pGraph);
+	TestGraph(pGraph, vSeedNodeIDs, 100);
 #endif
 
 #ifdef _TEST_Slashdot0902
 	auto pGraph = TSnap::LoadEdgeList<TPt<TNodeEDatNet<TFlt, TFlt>>>("datasets/Slashdot0902.txt", 0, 1);
-	RandomGraphInitialization(pGraph);
-	tbb::tick_count tic = tbb::tick_count::now();
-	std::vector<int> vSeedSet;
-	MaxIncrementalInfluence(pGraph, 5, vSeedSet);
-	double dElapsedTime = (tbb::tick_count::now() - tic).seconds();
-	cout << "Time elapsed for MaxInfluence computation: " << dElapsedTime << " seconds\n";
+	LoadEdgeWeightsFromFile(pGraph, "datasets/Slashdot0902-Network.txt");
+	std::vector<int> vSeedNodeIDs;
+	vSeedNodeIDs.push_back(0);
+	//vSeedNodeIDs.push_back(3);
+	pGraph = GenerateDAG1(pGraph, vSeedNodeIDs, 0);
+	//pGraph = GenerateDAG2(pGraph, vSeedNodeIDs, 0);
+	ResetGraphBelief(pGraph);
+	TestGraph(pGraph, vSeedNodeIDs, 100);
+
+#endif
+
+#ifdef _TEST_web-Stanford
+	auto pGraph = TSnap::LoadEdgeList<TPt<TNodeEDatNet<TFlt, TFlt>>>("datasets/web-Stanford.txt", 0, 1);
+	LoadEdgeWeightsFromFile(pGraph, "datasets/web-Stanford-Network.txt");
+	std::vector<int> vSeedNodeIDs;
+	vSeedNodeIDs.push_back(2);
+	//vSeedNodeIDs.push_back(3);
+	pGraph = GenerateDAG1(pGraph, vSeedNodeIDs, 0);
+	//pGraph = GenerateDAG2(pGraph, vSeedNodeIDs, 0);
+	ResetGraphBelief(pGraph);
+	TestGraph(pGraph, vSeedNodeIDs, 10);
+
 #endif
 #ifdef _TEST_EDGE_SAVE
 	 SaveEdgeWeightsToFile(pGraph, "BLABLA.txt");
@@ -389,6 +428,27 @@ int main(int argc, char* argv[])
 
 #endif
 
+#ifdef _DISPLAY_NETWORKS_INFO
+	//auto pGraph = TSnap::LoadEdgeList<TPt<TNodeEDatNet<TFlt, TFlt>>>("datasets/Email-EuAll.txt", 0, 1);
+	//LoadEdgeWeightsFromFile(pGraph, "datasets/Email-EuAll-Network.txt");
+	//auto pGraph = TSnap::LoadEdgeList<TPt<TNodeEDatNet<TFlt, TFlt>>>("datasets/p2p-Gnutella04.txt", 0, 1);
+	//LoadEdgeWeightsFromFile(pGraph, "datasets/p2p-Gnutella04-Network.txt");
+	auto pGraph = TSnap::LoadEdgeList<TPt<TNodeEDatNet<TFlt, TFlt>>>("datasets/Slashdot0902.txt", 0, 1);
+	//LoadEdgeWeightsFromFile(pGraph, "datasets/Slashdot0902-Network.txt");
+	//auto pGraph = TSnap::LoadEdgeList<TPt<TNodeEDatNet<TFlt, TFlt>>>("datasets/Amazon0302.txt", 0, 1);
+	//LoadEdgeWeightsFromFile(pGraph, "datasets/Amazon0302-Network.txt");
+	//auto pGraph = TSnap::LoadEdgeList<TPt<TNodeEDatNet<TFlt, TFlt>>>("datasets/web-Stanford.txt", 0, 1);
+	//LoadEdgeWeightsFromFile(pGraph, "datasets/web-Stanford-Network.txt");
+	int MaxDegree = 0;
+	for (auto NI = pGraph->BegNI(); NI < pGraph->EndNI(); NI++)
+	{
+		if (NI.GetInDeg()>MaxDegree)
+			MaxDegree = NI.GetInDeg();
+	}
+	std::cout << "Max Degree is " << MaxDegree<<std::endl;
+
+
+#endif
 
 #ifdef _WIN32
 	system("pause");

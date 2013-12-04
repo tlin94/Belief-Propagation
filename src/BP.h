@@ -39,7 +39,10 @@ void ParallelBPFromNode_SingleNodeUpdate(TPt<TNodeEDatNet<TFlt, TFlt>>& pGraph, 
 
 double InfluenceSpreadFromSeedNodes (const TPt<TNodeEDatNet<TFlt, TFlt>>& pGraph);
 
+
+//! Find a small subset of seed nodes maximizing the influence spread
 void GreedyCELF(TPt<TNodeEDatNet<TFlt, TFlt>>& pGraph, int setSize,std::vector<int> &vSeedSet);
 void ParallelGreedyCELF(TPt<TNodeEDatNet<TFlt, TFlt>>& pGraph, int setSize, std::vector<int> &vSeedSet);
+void NewGreedIC(TPt<TNodeEDatNet<TFlt, TFlt>>& pGraph, int setSize, int numRounds, std::vector<int> &vSeedSet);
 void ParallelNewGreedIC(TPt<TNodeEDatNet<TFlt, TFlt>>& pGraph, int setSize, int numRounds, std::vector<int> &vSeedSet);
 void ParallelNewGreedIC_Nested(TPt<TNodeEDatNet<TFlt, TFlt>>& pGraph, int setSize, int numRounds, std::vector<int> &vSeedSet);

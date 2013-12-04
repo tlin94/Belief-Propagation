@@ -435,10 +435,11 @@ TPt<TNodeEDatNet<TFlt, TFlt>> GenerateDAG2(const TPt<TNodeEDatNet<TFlt, TFlt>>& 
 
 void CalculateRankFromSource_BellmanFord(const TPt<TNodeEDatNet<TFlt, TFlt>> &pGraph, int sourceNode, std::vector<int> &vResult)
 {
-	int numNodes = pGraph->GetNodes();
+	int numNodes = (std::max)(pGraph->GetNodes(),sourceNode);
 	vResult.reserve(numNodes);
 	for(int i = 0; i<numNodes; ++i)
 		vResult.push_back(INT_MAX);
+	//cout << numNodes << " " << sourceNode << ", "<<pGraph->GetMxNId();
 	vResult[sourceNode]=0;
 
 	for (size_t i = 0; i < (vResult.size() - 1); ++i)
@@ -471,6 +472,7 @@ void CalculateRankFromSource_BellmanFord(const TPt<TNodeEDatNet<TFlt, TFlt>> &pG
 	int superRootNodeID = pGraph->GetMxNId();
 	AddSuperRootNode(pTemp, vSeedNodes, superRootNodeID);
 	CalculateRankFromSource_BellmanFord(pTemp, superRootNodeID, vResult);
+
 }
 
 void CalculateRankFromSource(const TPt<TNodeEDatNet<TFlt, TFlt>> &pGraph, int sourceNode, std::vector<int> &vResult)

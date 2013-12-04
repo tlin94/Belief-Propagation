@@ -8,3 +8,28 @@ Execution stopped: IsNode(SrcNId) && IsNode(DstNId) [Reason:'14 or 4524 not a no
 Sun Nov 24 23:16:08 2013
 Execution stopped: IsNode(SrcNId) && IsNode(DstNId) [Reason:'136 or 730 not a node.'], file include/snap-core/network.h, line 740
 --------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Tue Nov 26 14:35:30 2013
+Execution stopped: IsNode(SrcNId) && IsNode(DstNId) [Reason:'0 or 1 not a node.'], file include/snap-core/network.h, line 775
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Tue Nov 26 14:38:31 2013
+Execution stopped: IsEdge(SrcNId, DstNId) [Reason:'Edge between 119 and 124 does not exist.'], file include/snap-core/network.h, line 776
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Tue Nov 26 14:42:28 2013
+Execution stopped: IsEdge(SrcNId, DstNId) [Reason:'Edge between 0 and 4 does not exist.'], file include/snap-core/network.h, line 776
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Tue Nov 26 14:43:14 2013
+Execution stopped: IsEdge(SrcNId, DstNId) [Reason:'Edge between 119 and 124 does not exist.'], file include/snap-core/network.h, line 776
+--------
+--------
+/home/tlin/workspace/RumorBP/src/Main.Err
+Tue Nov 26 14:46:59 2013
+Execution stopped: IsEdge(SrcNId, DstNId) [Reason:'Edge between 0 and 4 does not exist.'], file include/snap-core/network.h, line 776
+--------

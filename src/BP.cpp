@@ -779,7 +779,7 @@ void GreedyCELF(TPt<TNodeEDatNet<TFlt, TFlt>>& pGraph, int setSize,std::vector<i
 			int nodeID = NI.GetId();
 			pGraph_temp = MIOA(pGraph_main, nodeID, 0);
 			ResetGraphBelief(pGraph_temp);
-			ParallelBPFromNodeDAG_LevelSynchronous(pGraph_temp,nodeID);
+			ParallelBPFromNode_LevelSynchronous(pGraph_temp,nodeID);
 			mSpreadIncrement[nodeID]=InfluenceSpreadFromSeedNodes(pGraph_temp);
 			//mMIOAs.insert(std::make_pair(i,pGraph_v));
 		}
@@ -811,8 +811,9 @@ void GreedyCELF(TPt<TNodeEDatNet<TFlt, TFlt>>& pGraph, int setSize,std::vector<i
 		vSeedSet.push_back(SeedID);
 		pGraph_main =CopyGraph(pGraph);
 		pGraph_main = GenerateDAG1(pGraph_main, vSeedSet, 0.0);
-		ParallelBPFromNodeDAG_LevelSynchronous(pGraph_main, vSeedSet);
+		ParallelBPFromNode_LevelSynchronous(pGraph_main, vSeedSet);
 		influence = InfluenceSpreadFromSeedNodes(pGraph_main);
+		cout << "Round "<<k<<": the influential spread is: "<<influence<<endl;
 
 		/*remove the newly selected node*/
 		mSpreadIncrement.erase(SeedID);
@@ -830,7 +831,7 @@ void GreedyCELF(TPt<TNodeEDatNet<TFlt, TFlt>>& pGraph, int setSize,std::vector<i
 				vSeedSet.push_back(nodeID);
 				pGraph_main =CopyGraph(pGraph);
 				pGraph_temp = GenerateDAG1(pGraph_main, vSeedSet, 0);
-				ParallelBPFromNodeDAG_LevelSynchronous(pGraph_temp, vSeedSet);
+				ParallelBPFromNode_LevelSynchronous(pGraph_temp, vSeedSet);
 				mSpreadIncrement[nodeID]=InfluenceSpreadFromSeedNodes(pGraph_temp)-influence;
 
 				if (mSpreadIncrement[nodeID]> Delta_MAX)
@@ -862,7 +863,7 @@ void ParallelGreedyCELF(TPt<TNodeEDatNet<TFlt, TFlt>>& pGraph, int setSize,std::
 				{
 					pGraph_temp = MIOA(pGraph_main, i, 0);
 					ResetGraphBelief(pGraph_temp);
-					ParallelBPFromNodeDAG_LevelSynchronous(pGraph_temp, i);
+					ParallelBPFromNode_LevelSynchronous(pGraph_temp, i);
 					mSpreadIncrement[i]=InfluenceSpreadFromSeedNodes(pGraph_temp);
 
 				}
@@ -871,7 +872,7 @@ void ParallelGreedyCELF(TPt<TNodeEDatNet<TFlt, TFlt>>& pGraph, int setSize,std::
 	}
 	//cout<<"Precomputation finished"<<endl;
 
-	for (int r=0;r<setSize;++r)
+	for (int k=0;k<setSize;++k)
 	{
 		/* select the i'th seed by finding u = argmax(mSpreadIncrement)*/
 		auto it = std::max_element(mSpreadIncrement.begin(),mSpreadIncrement.end(),
@@ -880,15 +881,15 @@ void ParallelGreedyCELF(TPt<TNodeEDatNet<TFlt, TFlt>>& pGraph, int setSize,std::
 								 }
 							);
 		int SeedID = it->first;
-		cout << "Round "<<r<<": the most influential node is: "<<SeedID <<endl;
+		cout << "Round "<<k<<": the most influential node is: "<<SeedID <<endl;
 
 		/* calculate the current influence spread */
 		vSeedSet.push_back(SeedID);
 		pGraph_main = CopyGraph(pGraph);
 		pGraph_main = GenerateDAG1(pGraph_main, vSeedSet, 0.0);
-		ParallelBPFromNodeDAG_LevelSynchronous(pGraph_main, vSeedSet);
+		ParallelBPFromNode_LevelSynchronous(pGraph_main, vSeedSet);
 		influence = InfluenceSpreadFromSeedNodes(pGraph_main);
-
+		cout << "Round "<<k<<": the influential spread is: "<<influence<<endl;
 		/*remove the newly selected node*/
 		mSpreadIncrement.unsafe_erase(SeedID);
 
@@ -906,7 +907,7 @@ void ParallelGreedyCELF(TPt<TNodeEDatNet<TFlt, TFlt>>& pGraph, int setSize,std::
 				vSeedSet.push_back(nodeID);
 				pGraph_main =CopyGraph(pGraph);
 				pGraph_temp = GenerateDAG1(pGraph_main, vSeedSet, 0);
-				ParallelBPFromNodeDAG_LevelSynchronous(pGraph_temp, vSeedSet);
+				ParallelBPFromNode_LevelSynchronous(pGraph_temp, vSeedSet);
 				mSpreadIncrement[nodeID]=InfluenceSpreadFromSeedNodes(pGraph_temp)-influence;
 
 				if (mSpreadIncrement[nodeID]> Delta_MAX)
@@ -918,6 +919,86 @@ void ParallelGreedyCELF(TPt<TNodeEDatNet<TFlt, TFlt>>& pGraph, int setSize,std::
 
 
 	}
+
+}
+
+void NewGreedIC(TPt<TNodeEDatNet<TFlt, TFlt>>& pGraph, int setSize, int numRounds, std::vector<int> &vSeedSet){
+
+	auto pGraph_temp = TNodeEDatNet<TFlt, TFlt>::New();
+	tbb::concurrent_unordered_map<int,unsigned int> mInfluenceSpread;
+	std::map<int, unsigned int> mNumOfNodesFromSource;
+	std::vector<int> vResult;
+	int i,chunk = 70;
+	static tbb::spin_mutex sMutex;
+
+	for (int k=0; k<setSize ; ++k)
+	{
+		mInfluenceSpread.clear();
+		mNumOfNodesFromSource.clear();
+		vResult.clear();
+
+		for (int r =0;r<numRounds;++r)
+		{
+			pGraph_temp = TNodeEDatNet<TFlt, TFlt>::New();
+			for (auto NI = pGraph->BegNI(); NI < pGraph->EndNI(); NI++)
+				pGraph_temp->AddNode(NI.GetId());
+
+			//1.Compute G' by removing each edge from G with probability 1 -p
+			//2.Compute the set of vertices reachable from S
+			//3.Compute as well the sets of vertices from v
+			for (auto EI = pGraph->BegEI(); EI < pGraph->EndEI(); EI++)
+			{
+				double coinflip = (double) rand()/RAND_MAX;
+				if( coinflip > 1.0-EI.GetDat().Val)
+				{
+					pGraph_temp->AddEdge(EI.GetSrcNId(),EI.GetDstNId());
+					pGraph_temp->SetEDat(EI.GetSrcNId(),EI.GetDstNId(),EI.GetDat().Val);
+				}
+
+			}
+
+			if(k!=0)//skip the first time
+				GetNumOfReachableNodesFromSource(pGraph_temp,vSeedSet,vResult);
+
+			for(auto NI = pGraph_temp->BegNI();NI<pGraph_temp->EndNI();NI++)
+			{
+				// make sure that v is not in Rg(S)
+				if (k!=0) {
+					auto result = std::find(vResult.begin(),vResult.end(), NI.GetId());
+					if  (result!=vResult.end()) continue;
+				}
+				if(pGraph_temp->IsNode(NI.GetId()))
+				{
+					mNumOfNodesFromSource[NI.GetId()] = GetNumOfReachableNodesFromSource(pGraph_temp,NI.GetId());
+					//cout<<"node "<<i<<", num of reachable nodes: "<<mNumOfNodesFromSource[i]<<endl;
+				}
+
+				// accumulate the influence spread
+				mInfluenceSpread[NI.GetId()]+=mNumOfNodesFromSource[NI.GetId()];
+
+			}
+		}
+
+		// select the i'th seed by finding u = argmax(mInfluenceSpread)
+		auto it = std::max_element(mInfluenceSpread.begin(),mInfluenceSpread.end(),
+				[&](std::pair<int,unsigned int> const& a, std::pair<int,unsigned int> const& b) {
+			return a.second < b.second;
+		}
+		);
+		int SeedID = it->first;
+		//cout<<" max: "<<mInfluenceSpread[SeedID]<<endl;
+		mInfluenceSpread.unsafe_erase(SeedID);
+		vSeedSet.push_back(SeedID);
+		cout << "Round "<< k <<": the most influential node is: "<<SeedID <<endl;
+
+		pGraph_temp = CopyGraph(pGraph);
+		pGraph_temp = GenerateDAG1(pGraph_temp, vSeedSet, 0.0);
+		ParallelBPFromNode_LevelSynchronous(pGraph_temp, vSeedSet);
+		double influence = InfluenceSpreadFromSeedNodes(pGraph_temp);
+		cout << "Round "<<k<<": the influential spread is: "<<influence<<endl;
+
+	}
+
 
 }
 
@@ -1000,7 +1081,12 @@ void ParallelNewGreedIC(TPt<TNodeEDatNet<TFlt, TFlt>>& pGraph, int setSize, int 
 		mInfluenceSpread.unsafe_erase(SeedID);
 		vSeedSet.push_back(SeedID);
 		cout << "Round "<< k <<": the most influential node is: "<<SeedID <<endl;
-		//Add the new seed and remove it from the map InfluenceSpread
+
+		pGraph_temp = CopyGraph(pGraph);
+		pGraph_temp = GenerateDAG1(pGraph_temp, vSeedSet, 0.0);
+		ParallelBPFromNode_LevelSynchronous(pGraph_temp, vSeedSet);
+		double influence = InfluenceSpreadFromSeedNodes(pGraph_temp);
+		cout << "Round "<<k<<": the influential spread is: "<<influence<<endl;
 
 	}
 
